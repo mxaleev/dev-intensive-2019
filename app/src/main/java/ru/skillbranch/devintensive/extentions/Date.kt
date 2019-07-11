@@ -1,79 +1,89 @@
-package ru.skillbranch.devintensive.extentions
+package ru.skillbranch.devintensive.extensions
 
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.abs
 
-const val SECOND = 1000L
-const val MINUTE = 60 * SECOND
-const val HOUR = 60 * MINUTE
-const val DAY = 24 * HOUR
+private const val SECOND = 1000L
+private const val MINUTE = 60L * SECOND
+private const val HOUR = 60L * MINUTE
+private const val DAY = 24L * HOUR
 
-fun Date.format(pattern:String = "HH:mm:ss dd.MM.yy"):String {
+fun Date.format(pattern: String = "HH:mm:ss dd.MM.yy"): String {
     val dateFormat = SimpleDateFormat(pattern, Locale("ru"))
     return dateFormat.format(this)
 }
 
-fun Date.add(value: Int, units: TimeUnits = TimeUnits.SECOND):Date {
-    var time = this.time
-
-    time += when(units) {
-        TimeUnits.SECOND -> value * SECOND
-        TimeUnits.MINUTE -> value * MINUTE
-        TimeUnits.HOUR -> value * HOUR
-        TimeUnits.DAY -> value * DAY
+fun Date.add(value: Int, timeUnit: TimeUnits): Date {
+    return this.apply {
+        time += when (timeUnit) {
+            TimeUnits.SECOND -> value * SECOND
+            TimeUnits.DAY -> value * DAY
+            TimeUnits.HOUR -> value * HOUR
+            TimeUnits.MINUTE -> value * MINUTE
+        }
     }
 
-    this.time = time
-    return this
 }
 
 fun Date.humanizeDiff(date: Date = Date()): String {
-    val interval: Long = (date.time - this.time)
-    val msec = if (interval > 0) interval else -interval
-    val future = interval < msec
 
-    if (msec <= 1000L) return "только что"
+    return when {
+        abs(this.time - date.time) <= SECOND && date > this -> "только что"
+        this.time < date.time - 360 * DAY -> "более года назад"
+        this.time > date.time + 360 * DAY -> "более чем через год"
+        else -> {
+            val seconds = (abs(this.time - date.time) / SECOND).toInt()
+            val template = if (this > date) "через %s" else "%s назад"
+            template.format(
+                when {
+                    seconds in 1..45 -> "несколько секунд"
+                    seconds in 45..75 -> "минуту"
+                    seconds in 75..45 * 60 -> pluralForm(seconds / 60, TimeUnits.MINUTE)
+                    seconds in 45 * 60..75 * 60 -> "час"
+                    seconds in 75 * 60..22 * 3600 -> pluralForm(seconds / 3600, TimeUnits.HOUR)
+                    seconds in 22 * 3600..26 * 3600 -> "день"
+                    seconds in 26 * 3600..360 * 86400 -> pluralForm(seconds / 86400, TimeUnits.DAY)
+                    else -> throw IllegalStateException()
+                }
+            )
+        }
 
-    val sec: Long = msec / 1000L
-    if (sec <= 45) return "${if (future) "через " else ""}несколько секунд${if (future) "" else " назад"}"
-    if (sec <= 75) return "${if (future) "через " else ""}минуту${if (future) "" else " назад"}"
-
-    val min: Long = sec / 60
-    if (min <= 45) return "${if (future) "через " else ""}${TimeUnits.MINUTE.plural(min.toInt())}${if (future) "" else " назад"}"
-    if (min <= 75) return "${if (future) "через " else ""}час${if (future) "" else " назад"}"
-
-    val hour: Long = min / 60
-    if (hour <= 22) return "${if (future) "через " else ""}${TimeUnits.HOUR.plural(hour.toInt())}${if (future) "" else " назад"}"
-    if (hour <= 26) return "${if (future) "через " else ""}день${if (future) "" else " назад"}"
-
-    val day: Long = hour / 24
-    if (day <= 360) return "${if (future) "через " else ""}${TimeUnits.DAY.plural(day.toInt())}${if (future) "" else " назад"}"
-
-    if (future) {
-        return "более чем через год"
-    }
-    else {
-        return "более года назад"
     }
 }
 
-enum class TimeUnits {
-    SECOND {
-        override fun plural(num: Int): String =
-            "$num ${if (num % 10 == 1) "секунду" else if (num % 10 in 2..4) "секунды" else "секунд"}"
-    },
-    MINUTE {
-        override fun plural(num: Int): String =
-            "$num ${if (num % 10 == 1) "минуту" else if (num % 10 in 2..4) "минуты" else "минут"}"
-    },
-    HOUR {
-        override fun plural(num: Int): String =
-            "$num ${if (num % 10 == 1) "час" else if (num % 10 in 2..4) "часа" else "часов"}"
-    },
-    DAY {
-        override fun plural(num: Int): String =
-            "$num ${if (num % 10 == 1) "день" else if (num % 10 in 2..4) "дня" else "дней"}"
-    };
 
-    abstract fun plural(num: Int): String
+private fun pluralForm(value: Int, unit: TimeUnits): String {
+
+
+    val form = when {
+        value % 10 == 1 && value != 11 -> 0
+        value % 10 in 2..4 -> 1
+        else -> 2
+    }
+    val forms = listOf(
+        "%s секунду",
+        "%s секунды",
+        "%s секунд",
+        "%s минуту",
+        "%s минуты",
+        "%s минут",
+        "%s час",
+        "%s часа",
+        "%s часов",
+        "%s день",
+        "%s дня",
+        "%s дней"
+    )
+    return forms[form + 3 * when (unit) {
+        TimeUnits.SECOND -> 0
+        TimeUnits.MINUTE -> 1
+        TimeUnits.HOUR -> 2
+        TimeUnits.DAY -> 3
+    }].format(value)
+}
+
+enum class TimeUnits {
+    SECOND, MINUTE, HOUR, DAY;
+    fun plural(value: Int): String = pluralForm(value, this)
 }

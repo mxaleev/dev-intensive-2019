@@ -1,4 +1,4 @@
-package ru.skillbranch.devintensive.extentions
+package ru.skillbranch.devintensive.extensions
 
 fun String.truncate(limit: Int = 16): String {
     val trimmedString = this.trim()
@@ -7,4 +7,4 @@ fun String.truncate(limit: Int = 16): String {
     return "$substr..."
 }
 
-fun String.stripHtml(): String = this.replace(Regex("(<(.|\\n)+?>)|(\\s\\s)+"), "")
+fun String.stripHtml(): String = this.replace(Regex("(<(.|\\n)+?>)|(&quot;)|(&amp;)|(&gt;)|(&lt;)"), "").replace(Regex("\\s+"), " ")
