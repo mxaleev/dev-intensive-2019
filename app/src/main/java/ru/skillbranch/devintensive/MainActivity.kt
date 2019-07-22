@@ -41,8 +41,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextView.OnEdito
         benderImage.setColorFilter(Color.rgb(r, g, b), PorterDuff.Mode.MULTIPLY)
 
         textTxt.text = benderObj.askQuestion()
-//        sendBtn.setOnClickListener(this)
-//        messageEt.setOnEditorActionListener(this)
+        sendBtn.setOnClickListener(this)
+        messageEt.setOnEditorActionListener(this)
     }
 
     override fun onSaveInstanceState(outState: Bundle?) {
