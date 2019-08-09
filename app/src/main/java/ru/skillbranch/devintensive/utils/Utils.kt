@@ -1,6 +1,8 @@
 package ru.skillbranch.devintensive.utils
 
+import android.content.Context
 import java.lang.StringBuilder
+import kotlin.math.roundToInt
 
 object Utils {
 
@@ -30,9 +32,29 @@ object Utils {
         return builder.toString().replace(" ", divider)
     }
 
+    private fun getTranslChar(char: Char, map: HashMap<Char, String>): String {
+        val transl  = map[char.toLowerCase()] ?: char.toString()
+
+        return if (char.isUpperCase() && transl.isNotEmpty())
+            transl.capitalize()
+        else transl
+    }
+
     fun toInitials(firstName: String?, lastName: String?): String? {
         val nameLetter = firstName.orEmpty().trim().getOrNull(0)?.toUpperCase() ?: ""
         val surnameLetter = lastName.orEmpty().trim().getOrNull(0)?.toUpperCase() ?: ""
         return "$nameLetter$surnameLetter".ifBlank { null }
+    }
+
+    fun convertPxToDp(context: Context, px: Int): Int {
+        return (px / context.resources.displayMetrics.density).roundToInt()
+    }
+
+    fun convertDpToPx(context: Context, dp: Float): Int {
+        return (dp * context.resources.displayMetrics.density).roundToInt()
+    }
+
+    fun convertSpToPx(context: Context, sp: Int): Int {
+        return sp * context.resources.displayMetrics.scaledDensity.roundToInt()
     }
 }
